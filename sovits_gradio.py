@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import io
 import logging
 import time
@@ -22,7 +24,7 @@ model_names = []
 model_folder_path = "logs/44k/"
 model_paths = glob.glob(model_folder_path+"G_*.pth")
 for model_path in model_paths:
-    model_names.append(os.path.basename(model_path))
+    model_names.insert(0, os.path.basename(model_path))
 
 # Config
 config_filename = "config.json"
@@ -115,11 +117,9 @@ def comparison(audio, model, speker, auto_pred):
 
 app = gr.Interface(
     fn=comparison,
-    inputs=[gr.Audio(type="filepath"), gr.Dropdown(choices=model_names), gr.Dropdown(choices=spk_list), "checkbox"],
-    outputs=["audio"],
+    inputs=[gr.Audio(type="filepath", label="入力音声"), gr.Dropdown(choices=model_names, value=model_names[0], label="モデル"), gr.Dropdown(choices=spk_list, value=spk_list[0], label="話者"), gr.Checkbox(label="ピッチの自動予測")],
+    outputs=[gr.Audio(label="出力音声")],
     allow_flagging='never',
-    input_conversion=None, 
-    output_conversion=None,
 )
 
 app.launch(share=True)
