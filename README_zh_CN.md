@@ -61,7 +61,7 @@ http://obs.cstcloud.cn/share/obs/sankagenkeshi/checkpoint_best_legacy_500.pt
 
 仅需要以以下文件结构将数据集放入dataset_raw目录即可
 
-```shell
+```
 dataset_raw
 ├───speaker0
 │   ├───xxx1-xxx1.wav
@@ -73,15 +73,25 @@ dataset_raw
     └───xxx7-xxx007.wav
 ```
 
+可以自定义说话人名称
+
+```
+dataset_raw
+└───suijiSUI
+    ├───1.wav
+    ├───...
+    └───25788785-20221210-200143-856_01_(Vocals)_0_0.wav
+```
+
 ## 🛠️ 数据预处理
 
-1. 重采样至 44100hz
+1. 重采样至44100Hz单声道
 
 ```shell
 python resample.py
 ```
 
-2. 自动划分训练集 验证集 测试集 以及自动生成配置文件
+2. 自动划分训练集、验证集，以及自动生成配置文件
 
 ```shell
 python preprocess_flist_config.py
@@ -170,7 +180,7 @@ python inference_main.py -m "logs/44k/G_30400.pth" -c "configs/config.json" -n "
 + 注意：Hubert Onnx模型请使用MoeSS提供的模型，目前无法自行导出（fairseq中Hubert有不少onnx不支持的算子和涉及到常量的东西，在导出时会报错或者导出的模型输入输出shape和结果都有问题）
 [Hubert4.0](https://huggingface.co/NaruseMioShirakana/MoeSS-SUBModel)
 
-## 旧贡献者
+## ☀️ 旧贡献者
 
 因为某些原因原作者进行了删库处理，本仓库重建之初由于组织成员疏忽直接重新上传了所有文件导致以前的contributors全部木大，现在在README里重新添加一个旧贡献者列表
 
@@ -211,3 +221,8 @@ python inference_main.py -m "logs/44k/G_30400.pth" -c "configs/config.json" -n "
 #### 《[中华人民共和国刑法](http://gongbao.court.gov.cn/Details/f8e30d0689b23f57bfc782d21035c3.html?sw=中华人民共和国刑法)》
 
 #### 《[中华人民共和国民法典](http://gongbao.court.gov.cn/Details/51eb6750b8361f79be8f90d09bc202.html)》
+
+## 💪 感谢所有的贡献者
+<a href="https://github.com/svc-develop-team/so-vits-svc/graphs/contributors" target="_blank">
+  <img src="https://contrib.rocks/image?repo=svc-develop-team/so-vits-svc" />
+</a>

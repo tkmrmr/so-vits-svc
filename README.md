@@ -61,7 +61,7 @@ Although the pretrained model generally does not cause any copyright problems, p
 
 Simply place the dataset in the `dataset_raw` directory with the following file structure.
 
-```shell
+```
 dataset_raw
 ├───speaker0
 │   ├───xxx1-xxx1.wav
@@ -73,15 +73,25 @@ dataset_raw
     └───xxx7-xxx007.wav
 ```
 
+You can customize the speaker name.
+
+```
+dataset_raw
+└───suijiSUI
+    ├───1.wav
+    ├───...
+    └───25788785-20221210-200143-856_01_(Vocals)_0_0.wav
+```
+
 ## 🛠️ Preprocessing
 
-1. Resample to 44100hz
+1. Resample to 44100Hz and mono
 
 ```shell
 python resample.py
 ```
 
-2. Automatically split the dataset into training, validation, and test sets, and generate configuration files
+2. Automatically split the dataset into training and validation sets, and generate configuration files
 
 ```shell
 python preprocess_flist_config.py
@@ -170,7 +180,7 @@ Use [onnx_export.py](https://github.com/svc-develop-team/so-vits-svc/blob/4.0/on
 
 Note: For Hubert Onnx models, please use the models provided by MoeSS. Currently, they cannot be exported on their own (Hubert in fairseq has many unsupported operators and things involving constants that can cause errors or result in problems with the input/output shape and results when exported.)  [Hubert4.0](https://huggingface.co/NaruseMioShirakana/MoeSS-SUBModel)
 
-## Previous contributors
+## ☀️ Previous contributors
 
 For some reason the author deleted the original repository. Because of the negligence of the organization members, the contributor list was cleared because all files were directly reuploaded to this repository at the beginning of the reconstruction of this repository. Now add a previous contributor list to README.md.
 
@@ -214,3 +224,8 @@ For some reason the author deleted the original repository. Because of the negli
 #### 《[中华人民共和国刑法](http://gongbao.court.gov.cn/Details/f8e30d0689b23f57bfc782d21035c3.html?sw=%E4%B8%AD%E5%8D%8E%E4%BA%BA%E6%B0%91%E5%85%B1%E5%92%8C%E5%9B%BD%E5%88%91%E6%B3%95)》
 
 #### 《[中华人民共和国民法典](http://gongbao.court.gov.cn/Details/51eb6750b8361f79be8f90d09bc202.html)》
+
+## 💪 Thanks to all contributors for their efforts
+<a href="https://github.com/svc-develop-team/so-vits-svc/graphs/contributors" target="_blank">
+  <img src="https://contrib.rocks/image?repo=svc-develop-team/so-vits-svc" />
+</a>
