@@ -27,8 +27,11 @@ for model_path in model_paths:
     model_names.insert(0, os.path.basename(model_path))
 
 # Config
-config_filename = "config.json"
-config_path = "configs/" + config_filename
+config_names = []
+config_folder_path = "configs/"
+config_paths = glob.glob(config_folder_path+"*.json")
+for config_path in config_paths:
+    config_names.append(os.path.basename(config_path))
 
 # 話者名
 with open("configs/config.json", "r") as f:
@@ -43,14 +46,13 @@ linear_gradient = 0
 
 # 基本デフォルト
 clip = 0
-trans = [0]
 slice_db = -40
 device = None
 noice_scale = 0.4
 pad_seconds = 0.5
 linear_gradient_retain = 0.75
 
-def comparison(audio, model, speker, auto_pred):
+def comparison(audio, model, config, speker, tran, auto_pred):
     svc_model = Svc(model_folder_path+model, config_path, device, cluster_model_path)
     infer_tool.mkdir(["raw", "results"])
     raw_audio_path = audio
@@ -58,7 +60,6 @@ def comparison(audio, model, speker, auto_pred):
     auto_predict_f0 = auto_pred
     lg = linear_gradient
     lgr = linear_gradient_retain
-    tran = trans[0]
 
     if "." not in raw_audio_path:
         raw_audio_path += ".wav"
@@ -117,7 +118,7 @@ def comparison(audio, model, speker, auto_pred):
 
 app = gr.Interface(
     fn=comparison,
-    inputs=[gr.Audio(type="filepath", label="入力音声"), gr.Dropdown(choices=model_names, value=model_names[0], label="モデル"), gr.Dropdown(choices=spk_list, value=spk_list[0], label="話者"), gr.Checkbox(label="ピッチの自動予測")],
+    inputs=[gr.Audio(type="filepath", label="入力音声"), gr.Dropdown(choices=model_names, value=model_names[0], label="モデル"), gr.Dropdown(choices=config_names, value=config_names[0], label="Config"), gr.Dropdown(choices=spk_list, value=spk_list[0], label="話者"), gr.Number(value=0, label="ピッチ"), gr.Checkbox(label="ピッチの自動予測")],
     outputs=[gr.Audio(label="出力音声")],
     allow_flagging='never',
 )
