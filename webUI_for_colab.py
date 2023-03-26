@@ -118,7 +118,7 @@ def comparison(audio, model, config, speker, tran, auto_pred):
 
 app = gr.Interface(
     fn=comparison,
-    inputs=[gr.Audio(type="filepath", label="入力音声"), gr.Dropdown(choices=model_names, value=model_names[0], label="モデル"), gr.Dropdown(choices=config_names, value=config_names[0], label="Config"), gr.Dropdown(choices=spk_list, value=spk_list[0], label="話者"), gr.Number(value=0, label="ピッチ"), gr.Checkbox(label="ピッチの自動予測")],
+    inputs=[gr.Audio(type="filepath", label="入力音声"), gr.Dropdown(choices=model_names, value=model_names[0], label="モデル"), gr.Dropdown(choices=config_names, value=config_names[0], label="設定"), gr.Dropdown(choices=spk_list, value=spk_list[0], label="話者"), gr.Number(value=0, label="ピッチ"), gr.Checkbox(label="ピッチの自動予測")],
     outputs=[gr.Audio(label="出力音声")],
     allow_flagging='never',
 )
