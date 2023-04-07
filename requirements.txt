@@ -7,6 +7,7 @@ scipy==1.7.3
 SoundFile==0.12.1
 torch==1.13.1
 torchaudio==0.13.1
+torchcrepe
 tqdm
 scikit-maad
 praat-parselmouth
@@ -14,6 +15,7 @@ onnx
 onnxsim
 onnxoptimizer
 fairseq==0.12.2
-librosa==0.8.1
+librosa==0.9.1
 tensorboard
 tensorboardX
+edge_tts

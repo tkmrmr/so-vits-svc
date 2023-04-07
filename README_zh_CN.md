@@ -107,7 +107,13 @@ python preprocess_flist_config.py
 python preprocess_hubert_f0.py
 ```
 
-执行完以上步骤后 dataset 目录便是预处理完成的数据，可以删除dataset_raw文件夹了
+执行完以上步骤后 dataset 目录便是预处理完成的数据，可以删除 dataset_raw 文件夹了
+
+#### 此时可以在生成的config.json修改部分参数
+
+* `keep_ckpts`：训练时保留最后几个模型，`0`为保留所有，默认只保留最后`3`个
+
+* `all_in_mem`：加载所有数据集到内存中，某些平台的硬盘IO过于低下、同时内存容量 **远大于** 数据集体积时可以启用
 
 ## 🏋️‍♀️ 训练
 
@@ -115,13 +121,9 @@ python preprocess_hubert_f0.py
 python train.py -c configs/config.json -m 44k
 ```
 
-注：训练时会自动清除老的模型，只保留最新3个模型，如果想防止过拟合需要自己手动备份模型记录点,或修改配置文件keep_ckpts 0为永不清除
-
 ## 🤖 推理
 
 使用 [inference_main.py](inference_main.py)
-
-截止此处，4.0使用方法（训练、推理）和3.0完全一致，没有任何变化（推理增加了命令行支持）
 
 ```shell
 # 例
@@ -129,17 +131,19 @@ python inference_main.py -m "logs/44k/G_30400.pth" -c "configs/config.json" -n "
 ```
 
 必填项部分
-+ -m, --model_path：模型路径。
-+ -c, --config_path：配置文件路径。
-+ -n, --clean_names：wav 文件名列表，放在 raw 文件夹下。
-+ -t, --trans：音高调整，支持正负（半音）。
-+ -s, --spk_list：合成目标说话人名称。
-+ -cl, --clip：音频自动切片，0为不切片，单位为秒/s。
++ `-m` | `--model_path`：模型路径
++ `-c` | `--config_path`：配置文件路径
++ `-n` | `--clean_names`：wav 文件名列表，放在 raw 文件夹下
++ `-t` | `--trans`：音高调整，支持正负（半音）
++ `-s` | `--spk_list`：合成目标说话人名称
++ `-cl` | `--clip`：音频强制切片，默认0为自动切片，单位为秒/s
 
-可选项部分：见下一节
-+ -a, --auto_predict_f0：语音转换自动预测音高，转换歌声时不要打开这个会严重跑调。
-+ -cm, --cluster_model_path：聚类模型路径，如果没有训练聚类则随便填。
-+ -cr, --cluster_infer_ratio：聚类方案占比，范围 0-1，若没有训练聚类模型则填 0 即可。
+可选项部分：部分具体见下一节
++ `-lg` | `--linear_gradient`：两段音频切片的交叉淡入长度，如果强制切片后出现人声不连贯可调整该数值，如果连贯建议采用默认值0，单位为秒
++ `-fmp` | `--f0_mean_pooling`：是否对F0使用均值滤波器(池化)，对部分哑音有改善。注意，启动该选项会导致推理速度下降，默认关闭
++ `-a` | `--auto_predict_f0`：语音转换自动预测音高，转换歌声时不要打开这个会严重跑调
++ `-cm` | `--cluster_model_path`：聚类模型路径，如果没有训练聚类则随便填
++ `-cr` | `--cluster_infer_ratio`：聚类方案占比，范围0-1，若没有训练聚类模型则默认0即可
 
 ## 🤔 可选项
 
@@ -162,6 +166,11 @@ python inference_main.py -m "logs/44k/G_30400.pth" -c "configs/config.json" -n "
 + 推理过程：
   + inference_main中指定cluster_model_path
   + inference_main中指定cluster_infer_ratio，0为完全不使用聚类，1为只使用聚类，通常设置0.5即可
+
+### F0均值滤波
+
+介绍：对F0进行均值滤波，可以有效的减少因音高推测波动造成的哑音（由于混响或和声等造成的哑音暂时不能消除）。该功能在部分歌曲上提升巨大，如果歌曲推理后出现哑音可以考虑开启。
++ 在inference_main中设置f0_mean_pooling为true即可
 
 ### [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1kv-3y2DmZo0uya8pEr1xk7cSB-4e_Pct?usp=sharing) [sovits4_for_colab.ipynb](https://colab.research.google.com/drive/1kv-3y2DmZo0uya8pEr1xk7cSB-4e_Pct?usp=sharing)
 
@@ -210,7 +219,7 @@ python inference_main.py -m "logs/44k/G_30400.pth" -c "configs/config.json" -n "
 
 ##### 第一千零一十九条
 
-任何组织或者个人不得以丑化、污损，或者利用信息技术手段伪造等方式侵害他人的肖像权。未经肖像权人同意，不得制作、使用、公开肖像权人的肖像，但是法律另有规定的除外。 未经肖像权人同意，肖像作品权利人不得以发表、复制、发行、出租、展览等方式使用或者公开肖像权人的肖像。 对自然人声音的保护，参照适用肖像权保护的有关规定。
+任何组织或者个人不得以丑化、污损，或者利用信息技术手段伪造等方式侵害他人的肖像权。未经肖像权人同意，不得制作、使用、公开肖像权人的肖像，但是法律另有规定的除外。未经肖像权人同意，肖像作品权利人不得以发表、复制、发行、出租、展览等方式使用或者公开肖像权人的肖像。对自然人声音的保护，参照适用肖像权保护的有关规定。
 
 ##### 第一千零二十四条
 
@@ -218,7 +227,7 @@ python inference_main.py -m "logs/44k/G_30400.pth" -c "configs/config.json" -n "
 
 ##### 第一千零二十七条
 
-【作品侵害名誉权】行为人发表的文学、艺术作品以真人真事或者特定人为描述对象，含有侮辱、诽谤内容，侵害他人名誉权的，受害人有权依法请求该行为人承担民事责任。 行为人发表的文学、艺术作品不以特定人为描述对象，仅其中的情节与该特定人的情况相似的，不承担民事责任。
+【作品侵害名誉权】行为人发表的文学、艺术作品以真人真事或者特定人为描述对象，含有侮辱、诽谤内容，侵害他人名誉权的，受害人有权依法请求该行为人承担民事责任。行为人发表的文学、艺术作品不以特定人为描述对象，仅其中的情节与该特定人的情况相似的，不承担民事责任。
 
 #### 《[中华人民共和国宪法](http://www.gov.cn/guoqing/2018-03/22/content_5276318.htm)》
 

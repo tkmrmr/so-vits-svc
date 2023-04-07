@@ -109,19 +109,21 @@ python preprocess_hubert_f0.py
 
 After completing the above steps, the dataset directory will contain the preprocessed data, and the dataset_raw folder can be deleted.
 
+#### You can modify some parameters in the generated config.json
+
+* `keep_ckpts`: Keep the last `keep_ckpts` models during training. Set to `0` will keep them all. Default is `3`.
+
+* `all_in_mem`: Load all dataset to RAM. It can be enabled when the disk IO of some platforms is too low and the system memory is **much larger** than your dataset.
+
 ## 🏋️‍♀️ Training
 
 ```shell
 python train.py -c configs/config.json -m 44k
 ```
 
-Note: During training, the old models will be automatically cleared and only the latest three models will be kept. If you want to prevent overfitting, you need to manually backup the model checkpoints, or modify the configuration file `keep_ckpts` to 0 to never clear them.
-
 ## 🤖 Inference
 
 Use [inference_main.py](https://github.com/svc-develop-team/so-vits-svc/blob/4.0/inference_main.py)
-
-Up to this point, the usage of version 4.0 (training and inference) is exactly the same as version 3.0, with no changes (inference now has command line support).
 
 ```shell
 # Example
@@ -129,17 +131,19 @@ python inference_main.py -m "logs/44k/G_30400.pth" -c "configs/config.json" -n "
 ```
 
 Required parameters:
-- -m, --model_path: path to the model.
-- -c, --config_path: path to the configuration file.
-- -n, --clean_names: a list of wav file names located in the raw folder.
-- -t, --trans: pitch adjustment, supports positive and negative (semitone) values.
-- -s, --spk_list: target speaker name for synthesis.
-- -cl, --clip: voice auto-split,set to 0 to turn off,duration in seconds.
+- `-m` | `--model_path`: path to the model.
+- `-c` | `--config_path`: path to the configuration file.
+- `-n` | `--clean_names`: a list of wav file names located in the raw folder.
+- `-t` | `--trans`: pitch adjustment, supports positive and negative (semitone) values.
+- `-s` | `--spk_list`: target speaker name for synthesis.
+- `-cl` | `--clip`: voice forced slicing, set to 0 to turn off(default), duration in seconds.
 
 Optional parameters: see the next section
-- -a, --auto_predict_f0: automatic pitch prediction for voice conversion, do not enable this when converting songs as it can cause serious pitch issues.
-- -cm, --cluster_model_path: path to the clustering model, fill in any value if clustering is not trained.
-- -cr, --cluster_infer_ratio: proportion of the clustering solution, range 0-1, fill in 0 if the clustering model is not trained.
+- `-lg` | `--linear_gradient`: The cross fade length of two audio slices in seconds. If there is a discontinuous voice after forced slicing, you can adjust this value. Otherwise, it is recommended to use the default value of 0.
+- `-fmp` | `--f0_mean_pooling`: Apply mean filter (pooling) to f0，which may improve some hoarse sounds. Enabling this option will reduce inference speed.
+- `-a` | `--auto_predict_f0`: automatic pitch prediction for voice conversion, do not enable this when converting songs as it can cause serious pitch issues.
+- `-cm` | `--cluster_model_path`: path to the clustering model, fill in any value if clustering is not trained.
+- `-cr` | `--cluster_infer_ratio`: proportion of the clustering solution, range 0-1, fill in 0 if the clustering model is not trained.
 
 ## 🤔 Optional Settings
 
@@ -148,7 +152,7 @@ If the results from the previous section are satisfactory, or if you didn't unde
 ### Automatic f0 prediction
 
 During the 4.0 model training, an f0 predictor is also trained, which can be used for automatic pitch prediction during voice conversion. However, if the effect is not good, manual pitch prediction can be used instead. But please do not enable this feature when converting singing voice as it may cause serious pitch shifting!
-- Set "auto_predict_f0" to true in inference_main.
+- Set `auto_predict_f0` to true in inference_main.
 
 ### Cluster-based timbre leakage control
 
@@ -162,6 +166,11 @@ The existing steps before clustering do not need to be changed. All you need to 
 - Inference process:
   - Specify "cluster_model_path" in inference_main.
   - Specify "cluster_infer_ratio" in inference_main, where 0 means not using clustering at all, 1 means only using clustering, and usually 0.5 is sufficient.
+
+### F0 mean filtering
+
+Introduction: The mean filtering of F0 can effectively reduce the hoarse sound caused by the predicted fluctuation of pitch (the hoarse sound caused by reverb or harmony can not be eliminated temporarily). This function has been greatly improved on some songs. If the song appears dumb after reasoning, it can be considered to open.
+- Set f0_mean_pooling to true in inference_main
 
 ### [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1kv-3y2DmZo0uya8pEr1xk7cSB-4e_Pct?usp=sharing) [sovits4_for_colab.ipynb](https://colab.research.google.com/drive/1kv-3y2DmZo0uya8pEr1xk7cSB-4e_Pct?usp=sharing)
 
@@ -210,9 +219,7 @@ For some reason the author deleted the original repository. Because of the negli
 
 ##### 第一千零一十九条 
 
-任何组织或者个人不得以丑化、污损，或者利用信息技术手段伪造等方式侵害他人的肖像权。未经肖像权人同意，不得制作、使用、公开肖像权人的肖像，但是法律另有规定的除外。
-未经肖像权人同意，肖像作品权利人不得以发表、复制、发行、出租、展览等方式使用或者公开肖像权人的肖像。
-对自然人声音的保护，参照适用肖像权保护的有关规定。
+任何组织或者个人不得以丑化、污损，或者利用信息技术手段伪造等方式侵害他人的肖像权。未经肖像权人同意，不得制作、使用、公开肖像权人的肖像，但是法律另有规定的除外。未经肖像权人同意，肖像作品权利人不得以发表、复制、发行、出租、展览等方式使用或者公开肖像权人的肖像。对自然人声音的保护，参照适用肖像权保护的有关规定。
 
 #####  第一千零二十四条 
 
@@ -220,8 +227,7 @@ For some reason the author deleted the original repository. Because of the negli
 
 #####  第一千零二十七条
 
-【作品侵害名誉权】行为人发表的文学、艺术作品以真人真事或者特定人为描述对象，含有侮辱、诽谤内容，侵害他人名誉权的，受害人有权依法请求该行为人承担民事责任。
-行为人发表的文学、艺术作品不以特定人为描述对象，仅其中的情节与该特定人的情况相似的，不承担民事责任。  
+【作品侵害名誉权】行为人发表的文学、艺术作品以真人真事或者特定人为描述对象，含有侮辱、诽谤内容，侵害他人名誉权的，受害人有权依法请求该行为人承担民事责任。行为人发表的文学、艺术作品不以特定人为描述对象，仅其中的情节与该特定人的情况相似的，不承担民事责任。  
 
 #### 《[中华人民共和国宪法](http://www.gov.cn/guoqing/2018-03/22/content_5276318.htm)》
 

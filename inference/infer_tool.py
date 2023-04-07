@@ -108,6 +108,9 @@ def split_list_by_n(list_collection, n, pre=0):
         yield list_collection[i-pre if i-pre>=0 else i: i + n]
 
 
+class F0FilterException(Exception):
+    pass
+
 class Svc(object):
     def __init__(self, net_g_path, config_path,
                  device=None,
@@ -142,14 +145,24 @@ class Svc(object):
 
 
 
-    def get_unit_f0(self, in_path, tran, cluster_infer_ratio, speaker):
+    def get_unit_f0(self, in_path, tran, cluster_infer_ratio, speaker, f0_filter ,F0_mean_pooling):
 
         wav, sr = librosa.load(in_path, sr=self.target_sample)
 
-        f0 = utils.compute_f0_parselmouth(wav, sampling_rate=self.target_sample, hop_length=self.hop_size)
-        f0, uv = utils.interpolate_f0(f0)
-        f0 = torch.FloatTensor(f0)
-        uv = torch.FloatTensor(uv)
+        if F0_mean_pooling == True:
+            f0, uv = utils.compute_f0_uv_torchcrepe(torch.FloatTensor(wav), sampling_rate=self.target_sample, hop_length=self.hop_size,device=self.dev)
+            if f0_filter and sum(f0) == 0:
+                raise F0FilterException("未检测到人声")
+            f0 = torch.FloatTensor(list(f0))
+            uv = torch.FloatTensor(list(uv))
+        if F0_mean_pooling == False:
+            f0 = utils.compute_f0_parselmouth(wav, sampling_rate=self.target_sample, hop_length=self.hop_size)
+            if f0_filter and sum(f0) == 0:
+                raise F0FilterException("未检测到人声")
+            f0, uv = utils.interpolate_f0(f0)
+            f0 = torch.FloatTensor(f0)
+            uv = torch.FloatTensor(uv)
+
         f0 = f0 * 2 ** (tran / 12)
         f0 = f0.unsqueeze(0).to(self.dev)
         uv = uv.unsqueeze(0).to(self.dev)
@@ -170,13 +183,17 @@ class Svc(object):
     def infer(self, speaker, tran, raw_path,
               cluster_infer_ratio=0,
               auto_predict_f0=False,
-              noice_scale=0.4):
+              noice_scale=0.4,
+              f0_filter=False,
+              F0_mean_pooling=False
+              ):
+
         speaker_id = self.spk2id.__dict__.get(speaker)
         if not speaker_id and type(speaker) is int:
             if len(self.spk2id.__dict__) >= speaker:
                 speaker_id = speaker
         sid = torch.LongTensor([int(speaker_id)]).to(self.dev).unsqueeze(0)
-        c, f0, uv = self.get_unit_f0(raw_path, tran, cluster_infer_ratio, speaker)
+        c, f0, uv = self.get_unit_f0(raw_path, tran, cluster_infer_ratio, speaker, f0_filter,F0_mean_pooling)
         if "half" in self.net_g_path and torch.cuda.is_available():
             c = c.half()
         with torch.no_grad():
@@ -185,12 +202,25 @@ class Svc(object):
             use_time = time.time() - start
             print("vits use time:{}".format(use_time))
         return audio, audio.shape[-1]
-    
+
     def clear_empty(self):
         # 清理显存
         torch.cuda.empty_cache()
 
-    def slice_inference(self,raw_audio_path, spk, tran, slice_db,cluster_infer_ratio, auto_predict_f0,noice_scale, pad_seconds=0.5, clip_seconds=0,lg_num=0,lgr_num =0.75):
+    def slice_inference(self,
+                        raw_audio_path,
+                        spk,
+                        tran,
+                        slice_db,
+                        cluster_infer_ratio,
+                        auto_predict_f0,
+                        noice_scale,
+                        pad_seconds=0.5,
+                        clip_seconds=0,
+                        lg_num=0,
+                        lgr_num =0.75,
+                        F0_mean_pooling = False
+                        ):
         wav_path = raw_audio_path
         chunks = slicer.cut(wav_path, db_thresh=slice_db)
         audio_data, audio_sr = slicer.chunks2audio(wav_path, chunks)
@@ -227,7 +257,8 @@ class Svc(object):
                 out_audio, out_sr = self.infer(spk, tran, raw_path,
                                                     cluster_infer_ratio=cluster_infer_ratio,
                                                     auto_predict_f0=auto_predict_f0,
-                                                    noice_scale=noice_scale
+                                                    noice_scale=noice_scale,
+                                                    F0_mean_pooling = F0_mean_pooling
                                                     )
                 _audio = out_audio.cpu().numpy()
                 pad_len = int(self.target_sample * pad_seconds)
@@ -252,14 +283,25 @@ class RealTimeVC:
 
     """输入输出都是1维numpy 音频波形数组"""
 
-    def process(self, svc_model, speaker_id, f_pitch_change, input_wav_path):
+    def process(self, svc_model, speaker_id, f_pitch_change, input_wav_path,
+                cluster_infer_ratio=0,
+                auto_predict_f0=False,
+                noice_scale=0.4,
+                f0_filter=False):
+
         import maad
         audio, sr = torchaudio.load(input_wav_path)
         audio = audio.cpu().numpy()[0]
         temp_wav = io.BytesIO()
         if self.last_chunk is None:
             input_wav_path.seek(0)
-            audio, sr = svc_model.infer(speaker_id, f_pitch_change, input_wav_path)
+
+            audio, sr = svc_model.infer(speaker_id, f_pitch_change, input_wav_path,
+                                        cluster_infer_ratio=cluster_infer_ratio,
+                                        auto_predict_f0=auto_predict_f0,
+                                        noice_scale=noice_scale,
+                                        f0_filter=f0_filter)
+
             audio = audio.cpu().numpy()
             self.last_chunk = audio[-self.pre_len:]
             self.last_o = audio
@@ -268,7 +310,13 @@ class RealTimeVC:
             audio = np.concatenate([self.last_chunk, audio])
             soundfile.write(temp_wav, audio, sr, format="wav")
             temp_wav.seek(0)
-            audio, sr = svc_model.infer(speaker_id, f_pitch_change, temp_wav)
+
+            audio, sr = svc_model.infer(speaker_id, f_pitch_change, temp_wav,
+                                        cluster_infer_ratio=cluster_infer_ratio,
+                                        auto_predict_f0=auto_predict_f0,
+                                        noice_scale=noice_scale,
+                                        f0_filter=f0_filter)
+
             audio = audio.cpu().numpy()
             ret = maad.util.crossfade(self.last_o, audio, self.pre_len)
             self.last_chunk = audio[-self.pre_len:]
